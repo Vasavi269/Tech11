@@ -1,0 +1,46 @@
+pipeline { 
+		agent any
+    environment {
+        registry = "vasavi1993/Task1"
+        registryCredential = 'docker_cred_vasavi'
+        dockerImage = ''
+    }
+   
+   
+    stages {
+        stage('Cloning Git') {
+            steps {
+                 git branch: 'Task1', url: 'https://github.com/Vasavi269/Tech11_API.git'
+        }
+      }
+        stage('Building  image') { 
+            steps { 
+                script { 
+                    dockerImage = docker.build registry + ":$BUILD_NUMBER" 
+                }
+            } 
+        }
+        stage('Deploy image') { 
+            steps { 
+                script { 
+                    docker.withRegistry( '', registryCredential ) { 
+					  dockerImage.push("$BUILD_NUMBER")
+                      dockerImage.push('latest') 
+                    }
+                } 
+            }
+        } 
+		 stage('Docker Run') {
+           steps{
+             script {
+             dockerImage.run("-p 8001:5000 --rm --name app_try")
+            }
+        }
+      }
+         stage('Cleaning up'){ 
+            steps { 
+                sh "docker rmi $registry:$BUILD_NUMBER" 
+            }
+        } 
+    }
+}
